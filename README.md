@@ -1,2 +1,3 @@
-# AdventOfCode2024
+# Advent of Code 2024
+
 Solutions and Spoilers for Advent of Code 2024
