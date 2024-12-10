@@ -8,7 +8,7 @@ import java.util.List;
 public class App {
 	
 	public static final List<Day> DAYS = List.of(
-			new Day1()
+			new Day1(), new Day2()
 			);
 	
 	public static String sneakyData(String name) {
