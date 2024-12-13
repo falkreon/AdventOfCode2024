@@ -1,6 +1,7 @@
 package blue.endless.advent.util;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 
 public class ArrayGrid<T> implements Grid<T> {
@@ -19,6 +20,7 @@ public class ArrayGrid<T> implements Grid<T> {
 	public ArrayGrid(int width, int height, T defaultValue) {
 		data = (T[]) new Object[width * height];
 		Arrays.fill(data, defaultValue);
+		this.defaultValue = defaultValue;
 		this.width = width;
 		this.height = height;
 	}
@@ -45,6 +47,10 @@ public class ArrayGrid<T> implements Grid<T> {
 		data[y * width + x] = value;
 	}
 	
+	public void setDefaultValue(T value) {
+		this.defaultValue = value;
+	}
+	
 	public void elementToString(Function<T, String> func, boolean commas) {
 		this.toString = func;
 		this.commas = commas;
@@ -62,6 +68,8 @@ public class ArrayGrid<T> implements Grid<T> {
 	
 	public ArrayGrid<T> copy() {
 		ArrayGrid<T> result = new ArrayGrid<T>(width, height);
+		result.defaultValue = this.defaultValue;
+		result.commas = this.commas;
 		
 		for(int y=0; y<height; y++) {
 			for(int x=0; x<width; x++) {
@@ -98,5 +106,42 @@ public class ArrayGrid<T> implements Grid<T> {
 		} else {
 			return (o==null) ? "null" : o.toString();
 		}
+	}
+	
+	public static ArrayGrid<Character> of(String input) {
+		List<String> lines =  input.trim().lines().toList();
+		ArrayGrid<Character> grid = new ArrayGrid<>(lines.get(0).length(), lines.size(), '.');
+		grid.elementToString((it)->""+it, false);
+		
+		for(int y=0; y<grid.getHeight(); y++) {
+			String line = lines.get(y);
+			for(int x=0; x<grid.getWidth(); x++) {
+				if (x < line.length()) grid.set(x, y, line.charAt(x));
+			}
+		}
+		
+		return grid;
+	}
+	
+	public static ArrayGrid<Integer> ofNumeric(String input) {
+		List<String> lines =  input.trim().lines().toList();
+		ArrayGrid<Integer> grid = new ArrayGrid<>(lines.get(0).length(), lines.size(), 0);
+		grid.elementToString((it)->""+it, false);
+		
+		for(int y=0; y<grid.getHeight(); y++) {
+			String line = lines.get(y);
+			for(int x=0; x<grid.getWidth(); x++) {
+				if (x < line.length()) {
+					char cur = line.charAt(x);
+					try {
+						grid.set(x, y, Integer.parseInt(""+cur));
+					} catch (NumberFormatException ex) {
+						// do nothing
+					}
+				}
+			}
+		}
+		
+		return grid;
 	}
 }
