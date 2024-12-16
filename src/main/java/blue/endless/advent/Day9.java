@@ -2,6 +2,9 @@ package blue.endless.advent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import blue.endless.advent.util.Range;
 
 public class Day9 implements Day {
 	
@@ -44,19 +47,33 @@ public class Day9 implements Day {
 		StringBuilder result = new StringBuilder();
 		
 		int max = disk.length;
-		if (max > 100) max = 100;
+		if (max > 200) max = 200;
 		
 		for(int i=0; i<max; i++) {
 			int cur = disk[i];
 			if (cur == -1) {
 				result.append('.');
 			} else if (cur>0xF) {
-				result.append(' ');
+				result.append('0');
 			} else {
 				char c = Integer.toHexString(disk[i]).charAt(0);
 				result.append(c);
 			}
 		}
+		
+		result.append('\n');
+		for(int i=0; i<max; i++) {
+			int cur = disk[i];
+			if (cur == -1) {
+				result.append('.');
+			} else if (cur>0xF) {
+				char c = Integer.toHexString(disk[i]).charAt(0);
+				result.append(c);
+			} else {
+				result.append('0');
+			}
+		}
+		
 		
 		return result.toString();
 	}
@@ -122,17 +139,115 @@ public class Day9 implements Day {
 		System.out.println("Checksum: "+checksum(disk));
 	}
 	
-	
-	public static class VolumeData {
+	public Range findFile(int[] disk, int fileId) {
+		Range result = null;
 		
+		for(int i=disk.length-1; i>=0; i--) {
+			if (result == null) {
+				if (disk[i] == fileId) {
+					result = new Range(i, 1);
+				}
+			} else {
+				if (disk[i] == fileId) {
+					result = new Range(result.start() - 1, result.length() + 1);
+				} else {
+					if (result != null) return result;
+				}
+			}
+		}
 		
+		//if (result == null) throw new IllegalStateException("File "+fileId+" couldn't be found!");
+		
+		return result;
 	}
 	
+	public Optional<Range> findFreeSpot(int[] disk, int size) {
+		int start = -1;
+		int len = -1;
+		
+		for(int i=0; i<disk.length; i++) {
+			if (start == -1) {
+				if (disk[i] == -1) {
+					//System.out.println("  examining run starting at "+i);
+					start = i ;
+					len = 1;
+				}
+			} else {
+				if (disk[i] == -1) {
+					len++;
+				} else {
+					if (len < size) {
+						//System.out.println("  run "+new Range(start, len)+" is insufficient");
+						start = -1;
+						len = -1;
+					} else {
+						//System.out.println("  run "+new Range(start, len)+" works!");
+						return Optional.of(new Range(start, len));
+					}
+				}
+			}
+		}
+		return Optional.empty();
+	}
+	
+	public void moveFile(int[] disk, Range file, Range freeSpot) {
+		if (freeSpot.length() < file.length()) throw new IllegalArgumentException();
+		
+		int fileId = disk[file.start()];
+		
+		for(int i=0; i<file.length(); i++) {
+			disk[file.start() + i] = -1;
+			disk[freeSpot.start() + i] = fileId;
+		}
+	}
+	
+	public long fullChecksum(int[] disk) {
+		long result = 0L;
+		
+		for(int i=0; i<disk.length; i++) {
+			int fileId = disk[i];
+			
+			// If the disk is defragmented, there's nothing after the first free cell
+			if (fileId == -1) continue;
+			
+			result += fileId * i;
+		}
+		
+		return result;
+	}
 	
 	@Override
 	public void b(String input) {
-		// TODO Auto-generated method stub
+		int[] disk = createDisk(input.trim());
+		System.out.println(examineDisk(disk));
+		System.out.println();
 		
+		int lastFileId = input.length() / 2;
+		System.out.println("Last File Id: "+lastFileId);
+		
+		while(findFile(disk, lastFileId) == null) lastFileId--;
+		System.out.println("Oops, last File Id: "+lastFileId);
+		
+		int filesMoved = 0;
+		
+		for (int i=lastFileId; i>=0; i--) {
+			//System.out.println("Compacting File: "+i);
+			Range lastFile = findFile(disk, i);
+			Optional<Range> freeSpot = findFreeSpot(disk, lastFile.length());
+			if (freeSpot.isEmpty() || freeSpot.get().start() > lastFile.start()) {
+				//System.out.println("Cannot compact file "+i);
+				//System.out.println();
+			} else {
+				System.out.println("Move file "+i+" from "+lastFile+" to "+freeSpot);
+				moveFile(disk, lastFile, freeSpot.get());
+				filesMoved++;
+				System.out.println(examineDisk(disk));
+				System.out.println();
+			}
+		}
+		
+		System.out.println("Checksum: "+fullChecksum(disk));
+		System.out.println("Files Successfully Compacted: " + filesMoved);
 	}
 
 }
