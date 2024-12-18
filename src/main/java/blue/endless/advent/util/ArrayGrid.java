@@ -93,8 +93,10 @@ public class ArrayGrid<T> implements Grid<T> {
 			result.append("\n");
 		}
 		
-		result.deleteCharAt(result.length()-1); //Delete last newline
-		if (commas) result.deleteCharAt(result.length()-1); //Delete last comma
+		if (result.length() > 0) {
+			result.deleteCharAt(result.length()-1); //Delete last newline
+			if (commas) result.deleteCharAt(result.length()-1); //Delete last comma
+		}
 		
 		return result.toString();
 	}
