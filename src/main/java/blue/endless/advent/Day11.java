@@ -122,7 +122,7 @@ public class Day11 implements Day {
 	public long recursiveCountWithTables(long seed, int remainingSteps) {
 		if (seed >=0 && seed <= 10L && remainingSteps <= 40) {
 			int[] relevantTable = table[(int) seed];
-			System.out.println("  "+remainingSteps+" skipped using table lookup!");
+			//System.out.println("  "+remainingSteps+" skipped using table lookup!");
 			return relevantTable[remainingSteps-1];
 		}
 		
@@ -146,6 +146,8 @@ public class Day11 implements Day {
 	
 	@Override
 	public void b(String input) {
+		long startTime = System.nanoTime();
+		
 		List<Long> stones = new ArrayList<>();
 		for(String s : input.trim().split(" ")) stones.add(Long.parseLong(s));
 		
@@ -160,9 +162,10 @@ public class Day11 implements Day {
 		
 		System.out.println("Final Stone Count: "+total);
 		
-		
-		
-		
+		long elapsed = System.nanoTime() - startTime;
+		elapsed /= 1_000_000; //nanos -> millis
+		double elapsedSeconds = elapsed / 1000.0d;
+		System.out.println("Elapsed time: "+elapsedSeconds+"s ("+elapsed+" msec)");
 		/*
 		int[] counts = new int[40];
 		List<Long> stones = List.of(10L);

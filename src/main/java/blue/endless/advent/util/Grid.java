@@ -16,4 +16,16 @@ public interface Grid<T> {
 		clear(vec.x(), vec.y());
 	}
 	void clear();
+	default void forEach(GridConsumer<T> consumer) {
+		for(int y=0; y<getHeight(); y++) {
+			for(int x=0; x<getWidth(); x++) {
+				consumer.accept(x, y, get(x, y));
+			}
+		}
+	}
+	
+	@FunctionalInterface
+	public static interface GridConsumer<T> {
+		public void accept(int x, int y, T value);
+	}
 }

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import blue.endless.advent.util.Strings;
-import blue.endless.advent.util.Vec2i;
 import blue.endless.advent.util.Vec2l;
 
 public class Day13 implements Day {

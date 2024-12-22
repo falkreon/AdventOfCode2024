@@ -9,6 +9,10 @@ public record Vec2i(int x, int y) {
 		return new Vec2i(this.x + vec.x, this.y + vec.y);
 	}
 	
+	public Vec2i offset(Direction dir) {
+		return new Vec2i(x + dir.dx(), y + dir.dy());
+	}
+	
 	public Vec2i subtract(int x, int y) {
 		return new Vec2i(this.x - x, this.y - y);
 	}

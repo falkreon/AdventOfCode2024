@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Objects;
 
 import blue.endless.advent.util.ArrayGrid;
+import blue.endless.advent.util.Direction;
 import blue.endless.advent.util.Grid;
 import blue.endless.advent.util.Vec2i;
 
@@ -32,56 +33,6 @@ public class Day6 implements Day {
 		return SAMPLE;
 	}
 	
-	public static enum Direction {
-		NORTH( 0, -1, '^', '|'),
-		EAST ( 1,  0, '>', '-'),
-		SOUTH( 0,  1, 'v', '|'),
-		WEST (-1,  0, '<', '-');
-		
-		private final char marker;
-		private final char axisMarker;
-		private final int dx;
-		private final int dy;
-		
-		Direction(int dx, int dy, char marker, char axisMarker) {
-			this.marker = marker;
-			this.axisMarker = axisMarker;
-			this.dx = dx;
-			this.dy = dy;
-		}
-		
-		public Direction clockwise() {
-			return switch(this) {
-				case NORTH -> EAST;
-				case EAST  -> SOUTH;
-				case SOUTH -> WEST;
-				case WEST  -> NORTH;
-			};
-		}
-		
-		public Direction counterClockwise() {
-			return switch(this) {
-			case NORTH -> WEST;
-			case EAST  -> NORTH;
-			case SOUTH -> EAST;
-			case WEST  -> SOUTH;
-		};
-		}
-		
-		public int dx() { return this.dx; }
-		public int dy() { return this.dy; }
-		public char marker() { return this.marker; }
-		public char axisMarker() { return this.axisMarker; }
-		
-		public static Direction of(char c) {
-			for(Direction d : values()) {
-				if (d.marker == c) return d;
-			}
-			
-			return Direction.NORTH;
-		}
-	}
-	
 	public static class Patrol {
 		public int x;
 		public int y;
@@ -94,8 +45,8 @@ public class Day6 implements Day {
 		}
 		
 		public void simulate(Grid<Character> grid, boolean markPath) {
-			int nextX = x + dir.dx;
-			int nextY = y + dir.dy;
+			int nextX = x + dir.dx();
+			int nextY = y + dir.dy();
 			char path = grid.get(nextX, nextY);
 			if (path == '#') {
 				// Turn instead
@@ -110,8 +61,8 @@ public class Day6 implements Day {
 		}
 		
 		public boolean simulatePartTwo(Grid<Character> grid) {
-			int nextX = x + dir.dx;
-			int nextY = y + dir.dy;
+			int nextX = x + dir.dx();
+			int nextY = y + dir.dy();
 			char path = grid.get(nextX, nextY);
 			if (path == '#' || path == 'O') {
 				// Turn instead
