@@ -29,11 +29,20 @@ public enum Direction {
 	
 	public Direction counterClockwise() {
 		return switch(this) {
-		case NORTH -> WEST;
-		case EAST  -> NORTH;
-		case SOUTH -> EAST;
-		case WEST  -> SOUTH;
-	};
+			case NORTH -> WEST;
+			case EAST  -> NORTH;
+			case SOUTH -> EAST;
+			case WEST  -> SOUTH;
+		};
+	}
+	
+	public Direction opposite() {
+		return switch(this) {
+			case NORTH -> SOUTH;
+			case EAST -> WEST;
+			case SOUTH -> NORTH;
+			case WEST -> EAST;
+		};
 	}
 	
 	public int dx() { return this.dx; }

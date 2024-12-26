@@ -1,6 +1,8 @@
 package blue.endless.advent;
 
 import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Set;
 
 import blue.endless.advent.util.ArrayGrid;
 import blue.endless.advent.util.Direction;
@@ -28,8 +30,8 @@ public class Day16 implements Day {
 				#.###.#.#.#.#.#
 				#S..#.....#...#
 				###############
-				""";
-		*/
+				""";*/
+		
 		
 		return
 				"""
@@ -83,17 +85,69 @@ public class Day16 implements Day {
 		
 		public boolean setIfLower(Direction dir, long value) {
 			long existing = get(dir);
-			if (value < existing) {
+			if (value <= existing) {
 				set(dir, value);
 				return true;
 			} else {
 				return false;
 			}
+		}
+		
+		public int entranceCount() {
+			int result = 0;
 			
+			if (n != Long.MAX_VALUE) result++;
+			if (s != Long.MAX_VALUE) result++;
+			if (e != Long.MAX_VALUE) result++;
+			if (w != Long.MAX_VALUE) result++;
+			
+			return result;
+		}
+		
+		public int optimalEntranceCount() {
+			long cost = entranceCost();
+			if (cost == Long.MAX_VALUE) return 0;
+			
+			int count = 0;
+			if (n == cost || n == cost + 1000L) count++;
+			if (e == cost || e == cost + 1000L) count++;
+			if (s == cost || s == cost + 1000L) count++;
+			if (w == cost || w == cost + 1000L) count++;
+			
+			return count;
+		}
+		
+		public long entranceCost() {
+			long cost = Long.MAX_VALUE;
+			if (n < cost) cost = n;
+			if (e < cost) cost = e;
+			if (s < cost) cost = s;
+			if (w < cost) cost = w;
+			
+			return cost;
+		}
+		
+		public Set<Step> getEntranceSteps(Vec2i pos) {
+			Set<Step> result = new HashSet<>();
+			if (w != Long.MAX_VALUE) result.add(new Step(pos, Direction.WEST, w));
+			if (e != Long.MAX_VALUE) result.add(new Step(pos, Direction.EAST, e));
+			if (n != Long.MAX_VALUE) result.add(new Step(pos, Direction.NORTH, n));
+			if (s != Long.MAX_VALUE) result.add(new Step(pos, Direction.SOUTH, s));
+			return result;
+		}
+		
+		public void clear() {
+			n = Long.MAX_VALUE;
+			e = Long.MAX_VALUE;
+			s = Long.MAX_VALUE;
+			w = Long.MAX_VALUE;
 		}
 		
 		@Override
 		public String toString() {
+			
+			if (optimalEntranceCount() > 1) return "+";
+			
 			if (n < e && n < s && n < w) {
 				return "^";
 			}
@@ -107,7 +161,21 @@ public class Day16 implements Day {
 			if (w == Long.MAX_VALUE) {
 				return "#";
 			}
+			
 			return "<";
+		}
+
+		public String debug() {
+			StringBuilder result = new StringBuilder();
+			
+			result.append("{ ");
+			result.append("n: "+n);
+			result.append(", e: "+e);
+			result.append(", s: "+s);
+			result.append(", w: "+w);
+			result.append(" }");
+			
+			return result.toString();
 		}
 	}
 	
@@ -123,30 +191,14 @@ public class Day16 implements Day {
 		return false;
 	}
 	
-	@Override
-	public void a(String input) {
-		ArrayGrid<Character> map = ArrayGrid.of(input.trim());
+	public ArrayGrid<Cell> createCostMap(ArrayGrid<Character> map, Vec2i start, Vec2i end) {
 		ArrayGrid<Cell> costMap = new ArrayGrid<>(map.getWidth(), map.getHeight());
 		costMap.elementToString(it->it.toString(), false);
-		
-		Vec2i start = null;
-		Vec2i end = null;
-		
 		for(int y=0; y<map.getHeight(); y++) {
 			for(int x=0; x<map.getWidth(); x++) {
-				char cur = map.get(x, y).charValue();
-				if (cur == 'S') {
-					map.set(x, y, '.');
-					start = new Vec2i(x, y);
-				} else if (cur == 'E') {
-					map.set(x, y, '.');
-					end = new Vec2i(x, y);
-				}
-				
 				costMap.set(x, y, new Cell());
 			}
 		}
-		
 		
 		ArrayDeque<Step> queue = new ArrayDeque<>();
 		queue.addFirst(new Step(start, Direction.EAST, 0));
@@ -173,7 +225,7 @@ public class Day16 implements Day {
 			// Check forward
 			Step forward = new Step(next.pos().offset(next.dir()), next.dir(), next.cost() + 1);
 			if (shouldEnqueue(map, costMap, forward)) {
-				System.out.println("Enqueueing "+forward);
+				//System.out.println("Enqueueing "+forward);
 				queue.addFirst(forward);
 				costMap.get(forward.pos()).setIfLower(forward.dir(), forward.cost());
 			}
@@ -181,7 +233,7 @@ public class Day16 implements Day {
 			Direction leftDir = next.dir().counterClockwise();
 			Step left = new Step(next.pos().offset(leftDir), leftDir, next.cost() + 1001);
 			if (shouldEnqueue(map, costMap, left)) {
-				System.out.println("Enqueueing "+left);
+				//System.out.println("Enqueueing "+left);
 				queue.addFirst(left);
 				costMap.get(left.pos()).setIfLower(left.dir(), left.cost());
 			}
@@ -189,7 +241,7 @@ public class Day16 implements Day {
 			Direction rightDir = next.dir().clockwise();
 			Step right = new Step(next.pos().offset(rightDir), rightDir, next.cost() + 1001);
 			if (shouldEnqueue(map, costMap, right)) {
-				System.out.println("Enqueueing "+right);
+				//System.out.println("Enqueueing "+right);
 				queue.addFirst(right);
 				costMap.get(right.pos()).setIfLower(right.dir(), right.cost());
 			}
@@ -203,8 +255,34 @@ public class Day16 implements Day {
 			}
 		}
 		
-		System.out.println(map);
-		System.out.println();
+		return costMap;
+	}
+	
+	@Override
+	public void a(String input) {
+		ArrayGrid<Character> map = ArrayGrid.of(input.trim());
+		
+		Vec2i start = null;
+		Vec2i end = null;
+		
+		for(int y=0; y<map.getHeight(); y++) {
+			for(int x=0; x<map.getWidth(); x++) {
+				char cur = map.get(x, y).charValue();
+				if (cur == 'S') {
+					map.set(x, y, '.');
+					start = new Vec2i(x, y);
+				} else if (cur == 'E') {
+					map.set(x, y, '.');
+					end = new Vec2i(x, y);
+				}
+			}
+		}
+		
+		ArrayGrid<Cell> costMap = createCostMap(map, start, end);
+		
+		
+		//System.out.println(map);
+		//System.out.println();
 		System.out.println(costMap);
 		
 		Cell endCell = costMap.get(end);
@@ -215,11 +293,161 @@ public class Day16 implements Day {
 			System.out.println("Fastest route score: "+cost);
 		}
 	}
-
+	
+	public static String debugMap(ArrayGrid<Character> map, ArrayGrid<Cell> costMap) {
+		StringBuilder result = new StringBuilder();
+		
+		for(int y=0; y<map.getHeight(); y++) {
+			for(int x=0; x<map.getWidth(); x++) {
+				char ch = map.get(x, y).charValue();
+				Cell c = costMap.get(x, y);
+				
+				switch(ch) {
+					case '#' -> result.append(ch);
+					case '.' -> {
+						if (c.entranceCount() == 0) {
+							result.append(ch);
+						} else {
+							result.append(c.toString());
+						}
+					}
+					default -> result.append(ch);
+				}
+			}
+			result.append('\n');
+		}
+		
+		return result.toString();
+	}
+	
+	public boolean check(Step input, Step output) {
+		if (input.dir() == output.dir()) {
+			return output.cost() == input.cost() + 1L;
+		}
+		
+		if (output.dir() == input.dir().clockwise() || output.dir == input.dir().counterClockwise()) {
+			return output.cost() == input.cost() + 1001L;
+		}
+		
+		return false; // Turning around is never optimal unless the start location is facing a wall.
+	}
+	
 	@Override
 	public void b(String input) {
-		// TODO Auto-generated method stub
+		/**
+		 * To recover the optimal path(s) from our gradient, we will need to prune all non-optimal paths.
+		 * 
+		 * One option is to, for each Cell, erase all entry directions which do not have the lowest cost of all
+		 * entry directions (a cell may be entered from two directions with the same cost). Because of the
+		 * turning cost, however, the resulting path may not be globally optimal.
+		 * 
+		 * We will define a pruning operation as the following:
+		 * 
+		 * - If there is only one entry direction into the cell, and the cell is not the Start or Exit Cell,
+		 *   delete all path information in the Cell (reset it to the sentinal value of Long.MAX_VALUE)
+		 * 
+		 * - Check the cell in the opposite direction of travel (the cell we moved *into* this cell from),
+		 *   and if it has one remaining entry direction, delete its contents as well.
+		 * 
+		 * - Repeat until you reach a cell with more than one point of entry. This is not a recursive operation,
+		 *   just a simple while loop.
+		 * 
+		 * Before the first pruning step, we will "snip" all links into the Exit Cell with non-optimal cost.
+		 * 
+		 * Finally, if the neighboring cells never enter *from this cell*, it is also a dead end.
+		 */
 		
+		ArrayGrid<Character> map = ArrayGrid.of(input.trim());
+		
+		Vec2i start = null;
+		Vec2i end = null;
+		
+		for(int y=0; y<map.getHeight(); y++) {
+			for(int x=0; x<map.getWidth(); x++) {
+				char cur = map.get(x, y).charValue();
+				if (cur == 'S') {
+					map.set(x, y, '.');
+					start = new Vec2i(x, y);
+				} else if (cur == 'E') {
+					map.set(x, y, '.');
+					end = new Vec2i(x, y);
+				}
+			}
+		}
+		
+		ArrayGrid<Cell> costMap = createCostMap(map, start, end);
+		costMap.setDefaultValue(new Cell());
+		
+		System.out.println(costMap);
+		
+		Cell endCell = costMap.get(end);
+		long cost = Math.min(endCell.n, endCell.e);
+		// Snip snip
+		if (endCell.n != cost) endCell.n = Long.MAX_VALUE;
+		if (endCell.e != cost) endCell.e = Long.MAX_VALUE;
+		if (cost == Long.MAX_VALUE) {
+			System.out.println("Did not reach the end!");
+			return;
+		} else {
+			System.out.println("Fastest route score: "+cost);
+		}
+		
+		System.out.println("Extracting optimal paths...");
+		
+		ArrayGrid<Character> optimal = map.copy();
+		
+		ArrayDeque<Vec2i> queue = new ArrayDeque<>();
+		queue.addLast(end);
+		while (!queue.isEmpty()) {
+			Vec2i cur = queue.removeFirst();
+			if (map.get(cur).charValue() == '.') { // Sanity check; should always succeed
+				optimal.set(cur, 'O');
+				
+				if (!cur.equals(start)) {
+					Cell costs = costMap.get(cur);
+					long curCost = costs.entranceCost();
+					if (curCost == Long.MAX_VALUE) throw new IllegalStateException();
+					
+					Set<Step> entranceSteps = costs.getEntranceSteps(cur);
+					for(Step s : entranceSteps) {
+						// Only process this step if its cost *could* make it the optimal route.
+						// This prunes almost all routes!
+						// ....... but not enough routes! It's still not only optimal routes!
+						// ....... and maybe prunes too much! Manually deleting extraneous routes doesn't seem to be a fix!
+						if (s.cost() == curCost || s.cost() == curCost + 1000L) {
+							
+							Vec2i neighbor = cur.offset(s.dir().opposite());
+							for(Step r : costMap.get(neighbor).getEntranceSteps(neighbor)) {
+								//System.out.println("Checking "+r+" -> "+s);
+								if (check(r, s)) {
+									queue.addLast(neighbor);
+								}
+							}
+							//for(Step )
+							
+						}
+					}
+				}
+			} else {
+				System.out.println("Failed sanity check with '"+map.get(cur).charValue()+"'");
+			}
+			
+			
+		}
+		
+		optimal.set(start, 'O');
+		
+		long result = 0L;
+		for(int y=0; y<optimal.getHeight(); y++) {
+			for(int x=0; x<optimal.getWidth(); x++) {
+				if (optimal.get(x, y).charValue() == 'O') result++;
+				if (optimal.get(x, y).charValue() == '#') optimal.set(x, y, (char) 0x2588);
+			}
+		}
+		System.out.println(optimal);
+		System.out.println("Cells along optimal path(s): "+result);
+		
+		//NOTE: THIS DOES NOT WORK
 	}
 	
 }
