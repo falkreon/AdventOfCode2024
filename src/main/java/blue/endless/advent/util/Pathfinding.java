@@ -5,6 +5,8 @@ import java.util.List;
 
 public class Pathfinding {
 	
+	private static final String GRADIENT = "\u2591\u2592\u2593\u2588";
+	
 	/**
 	 * Returns a quick and dirty list of in-bounds neighbors in cardinal directions.
 	 * @param map A Grid of any kind, used to detemrine what is in-bounds.
@@ -29,6 +31,8 @@ public class Pathfinding {
 		gradient.clear();
 		gradient.set(end, 0);
 		
+		long gradientMax = 0L;
+		
 		while(!queue.isEmpty()) {
 			Vec2i v = queue.removeFirst();
 			int ourCost = gradient.get(v);
@@ -46,11 +50,22 @@ public class Pathfinding {
 				int curCost = gradient.get(neighbor);
 				if (curCost > ourCost + 1) {
 					gradient.set(neighbor, ourCost + 1);
+					if (gradientMax < ourCost + 1) gradientMax = ourCost + 1;
 					if (neighbor.equals(start) && shortCircuit) return gradient;
 					queue.addLast(neighbor);
 				}
 			}
 		}
+		final double divisor = gradientMax;
+		
+		gradient.elementToString((it) -> {
+			int i = it.intValue();
+			if (i == Integer.MAX_VALUE) return " ";
+			double percent = i / divisor;
+			int index = (int) (percent * GRADIENT.length());
+			if (index >= GRADIENT.length()) index = GRADIENT.length()-1;
+			return ""+GRADIENT.charAt(index);
+		}, false);
 		
 		return gradient;
 	}
